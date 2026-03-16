@@ -74,7 +74,6 @@ def kasiski_examination(ciphertext):
 
 
 def chi_squared(observed_counts, n, expected_freq):
-    """Chi-squared statistic comparing observed counts to expected English."""
     return sum(
         (observed_counts.get(chr(ord("a") + i), 0) - n * expected_freq[i]) ** 2
         / (n * expected_freq[i])
@@ -83,7 +82,6 @@ def chi_squared(observed_counts, n, expected_freq):
 
 
 def find_key_letter(group):
-    """Try all 26 shifts on a group and return the shift with lowest chi²."""
     n = len(group)
     best_shift, best_score = 0, float("inf")
     for shift in range(26):
@@ -99,7 +97,6 @@ def find_key_letter(group):
 
 
 def decrypt_vigenere(ciphertext, key):
-    """Decrypt ciphertext with the given key."""
     m = len(key)
     key_shifts = [ord(k) - ord("a") for k in key]
     return "".join(

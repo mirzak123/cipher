@@ -1,0 +1,27 @@
+vigenere_crack.py — How it works
+=================================
+
+STEP 1 — Find the key length (Index of Coincidence)
+
+For each candidate key length 1–20, deal the ciphertext into that many
+groups (round-robin). If the guess is correct, each group is a simple
+Caesar cipher and its letter distribution looks like English (IoC ≈ 0.065).
+Compute the average IoC across groups. The key length with the highest
+average IoC is the best candidate. In our case: key length 14.
+
+STEP 2 — Kasiski Examination
+
+Scan the ciphertext for repeated 3/4/5-letter sequences. Compute the
+distance between each pair of occurrences. These distances must be
+multiples of the key length. Take the GCD of all distances as a
+candidate. (In practice the GCD often degrades to 1, but the factor
+frequency from Step 1 already pointed us to 14.)
+
+STEP 3 — Recover the key and decrypt (Chi-squared)
+
+For each key length 1–20: split ciphertext into groups, then for each
+group try all 26 Caesar shifts. Pick the shift whose decrypted letter
+frequencies best match English (lowest chi-squared score). That shift
+is one letter of the key. Decrypt the full ciphertext with the
+recovered key and print it. The human picks the most readable output.
+Key length 14 produces the most recognizable English.
