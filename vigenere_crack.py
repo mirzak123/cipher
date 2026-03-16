@@ -51,16 +51,12 @@ def average_ioc(ciphertext, key_length):
     return sum(iocs) / len(iocs)
 
 
-def kasiski_examination(ciphertext, min_len=3):
-    """
-    Find repeated substrings of length >= min_len, collect distances between
-    their occurrences, and return the GCD of all distances as well as the
-    top repeated sequences.
-    """
+def kasiski_examination(ciphertext):
     sequences = {}
-    for seq_len in range(min_len, min_len + 3):
+    for seq_len in range(3, 6):  # look at sequences from 3 letters to 5 letters in len
         for i in range(len(ciphertext) - seq_len + 1):
             seq = ciphertext[i : i + seq_len]
+            # add all positions that the same sequence occurs at
             sequences.setdefault(seq, []).append(i)
 
     repeated = {
@@ -116,63 +112,47 @@ def main():
     ciphertext = CIPHERTEXT
     print(f"\nCiphertext len: {len(ciphertext)}\n")
 
+    print("Step 1: calculate avg index of coincidende\n")
+
     # wikipedia says english IoC is 1.73, which when dvidied by number of letters
     # we get ~0.67. As close to that value as we can get would be best.
     # https://en.wikipedia.org/wiki/Index_of_coincidence
     print("\nCalculate average index of coincidende:\n")
 
     ioc_results = {}
-    for m in range(1, 21):
+    for m in range(1, 21):  # assume key not larger than 20
         avg = average_ioc(ciphertext, m)
         ioc_results[m] = avg
-        marker = " ◄──" if avg > 0.060 else ""
-        print(f"  {m:>10}  {avg:>10.5f}{marker}")
+        print(f"{m}:\t\t{avg:.5f}")
 
     best_ioc_length = max(ioc_results, key=lambda k: ioc_results[k])
     print(
-        f"\n  → Best candidate by IoC: key length = {best_ioc_length} "
-        f"(avg IoC = {ioc_results[best_ioc_length]:.5f})"
+        f"\nBest candidate by IoC: key length = {best_ioc_length} "
+        f"(avg IoC = {ioc_results[best_ioc_length]})"
     )
 
-    # ── Step 1b: Kasiski Examination ────────────────────────────────────
-    print(f"\n{'-' * 70}")
-    print("STEP 2 — Kasiski Examination")
-    print("-" * 70)
+    print("\nStep 2: Kasiski Examination\n")
 
-    repeated, distances, overall_gcd = kasiski_examination(ciphertext)
+    _, _, overall_gcd = kasiski_examination(ciphertext)
 
-    top = sorted(repeated.items(), key=lambda x: -len(x[1]))[:15]
-    print(f"\n  Top repeated sequences (showing up to 15):\n")
-    print(f"  {'Sequence':<10} {'Count':>5}  {'Positions'}")
-    print(f"  {'─' * 10} {'─' * 5}  {'─' * 30}")
-    for seq, positions in top:
-        dists = [
-            positions[j] - positions[i]
-            for i in range(len(positions))
-            for j in range(i + 1, len(positions))
-        ]
-        print(f"  {seq:<10} {len(positions):>5}  pos={positions}  dists={dists}")
+    # displaying this didn't help much
 
-    factor_counts = Counter()
-    for d in distances:
-        for f in range(2, 21):
-            if d % f == 0:
-                factor_counts[f] += 1
+    # find top 15 repeated sequences
+    # top_15_repeated = sorted(repeated.items(), key=lambda x: -len(x[1]))[:15]
+    # print(f"\n  Top 15 repeated sequences (sequence | count | positions):\n")
+    # for seq, positions in top_15_repeated:
+    #     dists = [
+    #         positions[j] - positions[i]
+    #         for i in range(len(positions))
+    #         for j in range(i + 1, len(positions))
+    #     ]
+    #     print(f"  {seq:<10} {len(positions):>5}  pos={positions}  dists={dists}")
 
-    print(f"\n  Factor frequency in distances (factors 2–20):\n")
-    print(f"  {'Factor':>8}  {'Count':>6}")
-    print(f"  {'─' * 8}  {'─' * 6}")
-    for f in range(2, 21):
-        bar = "█" * (factor_counts[f] // 3) if factor_counts[f] else ""
-        print(f"  {f:>8}  {factor_counts[f]:>6}  {bar}")
+    print(f"\nGCD of all distances: {overall_gcd}")
 
-    print(f"\n  → GCD of all distances: {overall_gcd}")
-
-    # ── Step 3: Decrypt for all key lengths 1–20 ───────────────────────
-    print(f"\n{'=' * 70}")
-    print("STEP 3 — Chi-squared key recovery + decryption for key lengths 1–20")
-    print("         Pick the key length whose output is most readable.")
-    print(f"{'=' * 70}")
+    print("\nStep 3: Chi-squared")
+    print("Pick the key length whose output is most readable.\n")
+    # none turn out to be readable, just take 14 as it has the highest score
 
     for key_length in range(1, 21):
         groups = ["" for _ in range(key_length)]
@@ -188,10 +168,8 @@ def main():
         avg_ioc = ioc_results[key_length]
         pt_ioc = index_of_coincidence(plaintext)
 
-        print(f"\n{'─' * 70}")
-        print(f'  Key length: {key_length}  |  Key: "{key}"')
-        print(f"  Avg group IoC: {avg_ioc:.4f}  |  Plaintext IoC: {pt_ioc:.4f}")
-        print(f"{'─' * 70}")
+        print(f'\nKey length: {key_length}  |  Key: "{key}"')
+        print(f"Avg group IoC: {avg_ioc:.5f}  |  Plaintext IoC: {pt_ioc:.5f}\n")
         for i in range(0, len(plaintext), 70):
             print(f"  {plaintext[i:i+70]}")
 
